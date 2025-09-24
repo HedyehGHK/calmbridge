@@ -4,6 +4,7 @@ import { SafeAreaView, View, Text, TouchableOpacity, StyleSheet, Animated, Easin
 import Svg, { Circle } from "react-native-svg";
 import Slider from "@react-native-community/slider";
 import * as Speech from "expo-speech";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { fillTemplate, loadScripts, ProcStep, StateTag } from "../../hooks/useHypno";
 
 // ---------- mock "sensor" calmness state (0..100) ----------
@@ -21,7 +22,7 @@ function hrvFromCalmness(calmness: number) {
 // ---------- breathing coach (animated concentric circles) ----------
 const BreathingCoach: React.FC<{ targetBpm?: number }> = ({ targetBpm = 6 }) => {
   const scale = useRef(new Animated.Value(0.85)).current;
-  const cycleMs = useMemo(() => Math.max(4000, Math.round(60000 / targetBpm)), [targetBpm]); // ~10s cycle for 6 bpm
+  const cycleMs = useMemo(() => Math.max(4000, Math.round(60000 / targetBpm)), [targetBpm]); // ~10s for 6 bpm
 
   useEffect(() => {
     const loop = Animated.loop(
@@ -76,6 +77,10 @@ const Btn: React.FC<{ label: string; onPress: () => void }> = ({ label, onPress 
 
 // ---------- main screen ----------
 export default function IndexScreen() {
+  const router = useRouter();
+  const params = useLocalSearchParams<{ anchor?: string }>();
+  const pickedKey = (params.anchor as string) || ""; // from /avatar?anchor=...
+
   const { calmness, setCalmness } = useCalmness();
   const rmssd = hrvFromCalmness(calmness);
 
@@ -87,9 +92,18 @@ export default function IndexScreen() {
   const [ttsEnabled, setTtsEnabled] = useState(true);
   const [voiceRate, setVoiceRate] = useState(0.95);
 
-  // derive state + text
+  // map keys from Avatar screen to readable anchors
+  const anchorMap: Record<string, string> = {
+    pinwheel: "a colorful pinwheel",
+    fox: "a friendly fox",
+    cupcake: "a yummy cupcake",
+  };
+
+  // derive state + anchor + text
   const state: StateTag = rmssd >= 50 ? "CALM" : rmssd >= 30 ? "RECOVER" : "ALERT";
-  const anchor = scripts.anchors[procStep];
+  const defaultAnchor = scripts.anchors[procStep];      // fallback per step
+  const selectedAnchor = anchorMap[pickedKey];          // from /avatar
+  const anchor = selectedAnchor ?? defaultAnchor;
   const text = fillTemplate(scripts.script[state], { anchor });
 
   // speak text whenever it changes
@@ -106,6 +120,11 @@ export default function IndexScreen() {
     <SafeAreaView style={styles.container}>
       {/* Child section */}
       <Text style={styles.title}>CalmBridge — Child View</Text>
+
+      <View style={[styles.row, { marginTop: 6 }]}>
+        <Btn label="Choose Anchor" onPress={() => router.push("/avatar")} />
+      </View>
+
       <BreathingCoach targetBpm={6} />
       <View style={styles.scriptBox}>
         <Text style={styles.scriptText}>{text}</Text>
