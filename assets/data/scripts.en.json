@@ -1,0 +1,12 @@
+{
+  "anchors": {
+    "IDLE": "your brave little friend",
+    "DRILL": "a quiet forest",
+    "INJECTION": "a colorful pinwheel"
+  },
+  "script": {
+    "CALM": "Think about {{anchor}}… with each out-breath a soft breeze… eyes on one point, body lighter.",
+    "ALERT": "Only a long exhale now… count to five… 1…2…3…4…5… {{anchor}} is right here with you.",
+    "RECOVER": "{{anchor}} says “Great job.” Take one gentle inhale… slow exhale… getting ready to continue."
+  }
+}
